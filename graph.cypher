@@ -1,99 +1,151 @@
-// Q1a
-CREATE (:Person {name:'SHAN', age:22});
+```cypher
+// 1. Basic Graph Creation 
+// a. Create a node labeled Person with properties (name, age).
+CREATE (:Person {name: "SHAN", age: 22});
 
-// Q1b
-CREATE (:City {name:'Kannur'});
+// b. Create a node labeled City.
+CREATE (:City {name: "Kannur"});
 
-// Q1c
-MATCH (p:Person {name:'SHAN'}),(c:City {name:'Kannur'}) CREATE (p)-[:LIVES_IN]->(c);
+// c. Create a relationship LIVES_IN between Person and City.
+MATCH (p:Person {name: "SHAN"}), (c:City {name: "Kannur"})
+CREATE (p)-[:LIVES_IN]->(c);
 
-// Q1d
-CREATE (:Person {name:'SHARUN',age:22})-[:LIVES_IN]->(:City {name:'Kozhikode'}),(:Person {name:'AMITH',age:23})-[:LIVES_IN]->(:City {name:'Kochi'});
+// d. Create multiple nodes and relationships in one query.
+CREATE 
+(shan:Person {name: "SHAN", age: 22}),
+(sharun:Person {name: "SHARUN", age: 24}),
+(amith:Person {name: "AMITH", age: 27}),
+(kannur:City {name: "Kannur"}),
+(kochi:City {name: "Kochi"}),
+(shan)-[:LIVES_IN]->(kannur),
+(sharun)-[:LIVES_IN]->(kochi),
+(amith)-[:LIVES_IN]->(kochi),
+(shan)-[:FRIEND]->(sharun),
+(sharun)-[:FRIEND]->(amith),
+(amith)-[:FRIEND]->(shan);
 
-// Q2
+// 2. Retrieve all nodes from the graph.
 MATCH (n) RETURN n;
 
-// Q3.1
+// 1. Find all Person nodes.
 MATCH (p:Person) RETURN p;
 
-// Q3.2
-MATCH (p:Person {name:'SHAN'}) SET p.age=23;
+// 2. Update a person’s age.
+MATCH (p:Person {name: "SHARUN"})
+SET p.age = 26;
 
-// Q3.3
-MATCH (p:Person {name:'SHARUN'}) DETACH DELETE p;
+// 3. Delete a node and its relationships.
+MATCH (p:Person {name: "AMITH"})
+DETACH DELETE p;
 
-// Q3.4
-MATCH (p:Person) SET p.gender='M';
+// 4. Add a new property to existing nodes.
+MATCH (p:Person)
+SET p.gender = "Male";
 
-// Q5
-MATCH (p:Person)-[:LIVES_IN]->(c:City {name:'Kannur'}) RETURN p;
+// 5. Find all persons who live in a specific city.
+MATCH (p:Person)-[:LIVES_IN]->(c:City {name: "Kochi"})
+RETURN p;
 
-// Q6
-MATCH (a)-[r]->(b) RETURN a,r,b;
+// 6. Find all relationships between nodes.
+MATCH ()-[r]->() RETURN r;
 
-// Q7 (create + match)
-MATCH (a:Person {name:'SHAN'}),(b:Person {name:'AMITH'}) CREATE (a)-[:FRIEND]->(b);
-MATCH (p1:Person)-[:FRIEND]->(p2:Person) RETURN p1,p2;
+// 7. Match patterns of type (Person)-[:FRIEND]->(Person)
+MATCH (p1:Person)-[:FRIEND]->(p2:Person)
+RETURN p1, p2;
 
-// Q8
-MATCH (p1:Person)-[:FRIEND]-(p2:Person) RETURN p1,p2;
+// 8. Find bidirectional relationships.
+MATCH (p1:Person)-[r]-(p2:Person)
+RETURN p1, p2;
 
-// Q9
-MATCH (p:Person {name:'SHAN'})-[:FRIEND]->(f) RETURN f;
+// 9. Find friends of a person (1-hop traversal)
+MATCH (p:Person {name: "SHAN"})-[:FRIEND]->(f)
+RETURN f;
 
-// Q10
-MATCH (p:Person {name:'SHAN'})-[:FRIEND]->()-[:FRIEND]->(f2) RETURN DISTINCT f2.name;
+// 10. Find friends of friends (2-hop traversal)
+MATCH (p:Person {name: "SHAN"})-[:FRIEND*2]->(f)
+RETURN f;
 
-// Q11
-MATCH (p:Person {name:'SHAN'})-[:FRIEND*1..3]->(n) RETURN n;
+// 11. Find all nodes reachable within depth 3
+MATCH (p:Person {name: "SHAN"})-[:FRIEND*1..3]->(f)
+RETURN f;
 
-// Q12
-MATCH (p:Person {name:'SHAN'})-[:FRIEND*1..2]->(n) RETURN n;
+// 12. Limit traversal depth.
+MATCH (p:Person {name: "SHAN"})-[:FRIEND*1..2]->(f)
+RETURN f;
 
-// Q13
-MATCH p=shortestPath((a:Person {name:'SHAN'})-[:FRIEND*]-(b:Person {name:'AMITH'})) RETURN p;
+// 13. Find shortest path between two nodes
+MATCH (p1:Person {name: "SHAN"}), (p2:Person {name: "SHARUN"})
+MATCH path = shortestPath((p1)-[*]-(p2))
+RETURN path;
 
-// Q14
-MATCH p=(a:Person {name:'SHAN'})-[:FRIEND*]-(b:Person {name:'AMITH'}) RETURN p;
+// 14. Find all paths between two nodes
+MATCH (p1:Person {name: "SHAN"}), (p2:Person {name: "SHARUN"})
+MATCH path = (p1)-[*]-(p2)
+RETURN path;
 
-// Q15
-MATCH p=(a:Person {name:'SHAN'})-[:FRIEND*1..3]-(b:Person {name:'AMITH'}) RETURN p;
+// 15. Find paths with length ≤ 3
+MATCH (p1:Person {name: "SHAN"}), (p2:Person {name: "SHARUN"})
+MATCH path = (p1)-[*1..3]-(p2)
+RETURN path;
 
-// Q16
-MATCH p=(a:Person {name:'SHAN'})-[:FRIEND*]-(b) WHERE ALL(n IN nodes(p) WHERE SINGLE(x IN nodes(p) WHERE x=n)) RETURN p;
+// 16. Avoid revisiting nodes in a path
+MATCH path = (p:Person {name: "SHAN"})-[:FRIEND*]->(f)
+WHERE ALL(n IN nodes(path) WHERE SINGLE(x IN nodes(path) WHERE x = n))
+RETURN path;
 
-// Q17
-MATCH (p:Person) WHERE p.age > 25 RETURN p;
+// 17. Find nodes with age > 25
+MATCH (p:Person)
+WHERE p.age > 25
+RETURN p;
 
-// Q18
-MATCH (p:Person)-[:FRIEND]->(q:Person) WHERE p.age > 20 RETURN p,q;
+// 18. Use WHERE clause with relationships
+MATCH (p:Person)-[:LIVES_IN]->(c:City)
+WHERE c.name = "Kochi"
+RETURN p;
 
-// Q19
-MATCH (p:Person {name:'SHAN'}) RETURN p;
+// 19. Find nodes with specific property values
+MATCH (p:Person {name: "SHAN"})
+RETURN p;
 
-// Q20
-MATCH (p:Person) WHERE p.name IN ['SHAN','AMITH'] AND p.age > 20 RETURN p;
+// 20. Use IN and AND conditions.
+MATCH (p:Person)
+WHERE p.name IN ["SHAN","SHARUN"] AND p.age > 20
+RETURN p;
 
-// Q21
-MATCH (p:Person)-[:FRIEND]->(f) RETURN p.name, COUNT(f);
+// 21. Count number of friends per person
+MATCH (p:Person)-[:FRIEND]->(f)
+RETURN p.name, COUNT(f) AS friends;
 
-// Q22
-MATCH (p:Person)-[:FRIEND]->(f) RETURN p, COUNT(f) AS c ORDER BY c DESC LIMIT 1;
+// 22. Find node with maximum connections
+MATCH (p:Person)-[r]-()
+RETURN p, COUNT(r) AS connections
+ORDER BY connections DESC
+LIMIT 1;
 
-// Q23
-MATCH (p:Person) RETURN AVG(p.age);
+// 23. Calculate average age
+MATCH (p:Person)
+RETURN AVG(p.age) AS avg_age;
 
-// Q24
-MATCH (p:Person)-[:LIVES_IN]->(c:City) RETURN c.name, COUNT(p);
+// 24. Group by city.
+MATCH (p:Person)-[:LIVES_IN]->(c:City)
+RETURN c.name, COUNT(p);
 
-// Q25
-MATCH (p:Person)-[r]-() RETURN p, COUNT(r) AS deg ORDER BY deg DESC LIMIT 1;
+// 25. Find nodes with highest degree
+MATCH (p:Person)-[r]-()
+RETURN p, COUNT(r) AS degree
+ORDER BY degree DESC;
 
-// Q26
-MATCH p=(n)-[:FRIEND*]->(n) RETURN p;
+// 26. Detect cycles in graph
+MATCH path = (p:Person)-[:FRIEND*]->(p)
+RETURN path;
 
-// Q27
-MATCH (n)-[:FRIEND*]->(m) RETURN n,m;
+// 27. Find strongly connected components (conceptual)
+CALL gds.stronglyConnectedComponents.stream('graph')
+YIELD nodeId, componentId;
 
-// Q28
-MATCH (p:Person)-[r]-() RETURN p, COUNT(r) AS connections ORDER BY connections DESC;
+// 28. Find central nodes (high connectivity)
+MATCH (p:Person)-[r]-()
+RETURN p, COUNT(r) AS centrality
+ORDER BY centrality DESC
+LIMIT 5;
+```
